@@ -67,6 +67,21 @@ and honestly rate a site.
 - **Reusable** — first-party trust is configured per deployment, so nobody
   inherits trust in another operator's sites.
 
+## CLI
+
+A small reference command lives in [`cmd/classify`](cmd/classify) — handy for
+spot-checking domains and as a known-good example of using the library.
+
+```bash
+go run ./cmd/classify "https://www.youtube.com/watch?v=abc" https://example.com
+go run ./cmd/classify -json https://youtube.com                 # machine-readable
+go run ./cmd/classify -first-party privatebychoice.com https://privatebychoice.com
+cat urls.txt | go run ./cmd/classify                            # batch from stdin
+```
+
+The `-json` output is a preview of what an SSG per-page privacy manifest entry
+could look like.
+
 ## Testing
 
 ```bash
