@@ -1,0 +1,38 @@
+{
+  "example.com": {
+    "trust": "own",
+    "note": "PLACEHOLDER first-party example. Do NOT ship real first-party trust in the dataset — mark your own sites at runtime with WithFirstParty(). example.com is an IANA-reserved documentation domain, so nobody inherits trust in the module author's sites."
+  },
+  "youtube.com": {
+    "trust": "audited",
+    "verified": "2026-07-25",
+    "note": "Standard YouTube link/embed.",
+    "evidence": "Sets ad/tracking cookies (VISITOR_INFO1_LIVE, YSC) plus Google/DoubleClick; loads googleapis/doubleclick scripts; ad-supported. Fingerprinting/session-replay not individually confirmed.",
+    "signals": {
+      "adTrackingCookies": "yes",
+      "honorsGPC": "no",
+      "adsTrackers": "heavy",
+      "thirdPartyScripts": "many",
+      "sellsSharesData": "yes",
+      "fingerprinting": "unknown",
+      "sessionReplay": "unknown",
+      "thirdPartyDomains": 20
+    }
+  },
+  "youtube-nocookie.com": {
+    "trust": "audited",
+    "verified": "2026-07-25",
+    "note": "Privacy-enhanced embed domain. Defers cookies until playback but is not cookie-free once the user plays. Pair with a click-to-load facade so nothing loads until the user opts in.",
+    "evidence": "No cookies pre-playback; on play it sets cookies and loads Google scripts. Ad-cookie behaviour on playback not yet individually confirmed, so left Unknown rather than asserted clean. GPC not honoured, so the grade is capped at C regardless.",
+    "signals": {
+      "adTrackingCookies": "unknown",
+      "honorsGPC": "no",
+      "adsTrackers": "some",
+      "thirdPartyScripts": "many",
+      "sellsSharesData": "unknown",
+      "fingerprinting": "unknown",
+      "sessionReplay": "unknown",
+      "thirdPartyDomains": 8
+    }
+  }
+}
