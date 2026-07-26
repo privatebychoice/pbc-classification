@@ -82,6 +82,18 @@ cat urls.txt | go run ./cmd/classify                            # batch from std
 The `-json` output is a preview of what an SSG per-page privacy manifest entry
 could look like.
 
+## Development
+
+Common tasks live in the `Makefile` (requires Go 1.26+):
+
+```bash
+make check   # fmt-check + vet + test + govulncheck — run before pushing
+make help    # list every target (race, cover, tidy, ...)
+```
+
+`make check` is the local quality gate. `govulncheck` runs via `go run` and is
+never added to `go.mod`. GitHub Actions CI is planned separately.
+
 ## Testing
 
 ```bash
