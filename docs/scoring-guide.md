@@ -21,11 +21,11 @@ letter + name + icon so the badge is readable to everyone.
 
 | Grade | Name | Icon | Meaning |
 |-------|------|------|---------|
-| A | Clean | `✓✓` | GPC honoured, no ad cookies, no third-party ads/trackers/scripts, nothing invasive — all verified |
-| B | Considerate | `✓` | Verified clean on the disqualifiers, honours GPC, at most minor third-party content |
-| C | Mixed | `~` | The honest middle: GPC not honoured, or some signals still unverified |
-| D | Tracking | `!` | A confirmed disqualifier is present (ad cookies / fingerprinting / session replay / data selling) |
-| F | Invasive | `✕` | A disqualifier **and** a governance failure (no GPC, or heavy trackers) |
+| A | Clean | `✓✓` | Fully verified clean (no third-party ad cookies, ads/trackers, scripts, or anything invasive) **and** honours GPC |
+| B | Considerate | `✓` | Confirmed no third-party ad cookies and at most minor third-party content — reached even when GPC is unverified |
+| C | Mixed | `~` | The honest middle: some signals verified but not enough to confirm clean, or an in-scope site that doesn't honour GPC |
+| D | Tracking | `!` | A confirmed disqualifier is present (third-party ad cookies / fingerprinting / session replay / data selling) |
+| F | Invasive | `✕` | A disqualifier **and** a governance failure (heavy trackers, or ad-tracking/selling without honouring GPC) |
 | ? | Unclassified | `?` | Not enough verified signals to rate |
 
 Plus a **trust marker** for provenance (separate axis):
@@ -44,8 +44,8 @@ use DevTools. Record what you actually see, not what you expect.
 
 | Field | How to verify | Value |
 |-------|---------------|-------|
-| `adTrackingCookies` | DevTools → Application → Cookies. Distinguish first-party functional cookies from ad-network ones (DoubleClick, `_ga`, `_fbp`, etc.). | `yes` if any ad/tracking cookie is set, else `no` |
-| `honorsGPC` | Send `Sec-GPC: 1` / set `navigator.globalPrivacyControl`; check the privacy policy's GPC statement. | `yes` only if honouring is confirmed |
+| `adTrackingCookies` | DevTools → Application → Cookies. Only **third-party / cross-site advertising or tracking** cookies count (DoubleClick, `_fbp`, ad-network `_ga` linkage, etc.). Benign first-party functional or privacy-respecting first-party analytics cookies do **not** count. | `yes` only for third-party ad/tracking cookies; a site with only first-party functional cookies is `no` |
+| `honorsGPC` | Send `Sec-GPC: 1` / set `navigator.globalPrivacyControl`; check the privacy policy's GPC statement. Only meaningful for sites that sell/share or ad-track. | `yes` only if honouring is confirmed. Record `no` **only** for a site that sells/shares or ad-tracks; otherwise leave it Unknown (there is nothing to honour). |
 | `adsTrackers` | Network tab grouped by domain; count ad/tracker origins. | `none` / `some` (low) / `heavy` (high) |
 | `thirdPartyScripts` | Network tab → JS from third-party origins. | `none` / `few` (low) / `many` (high) |
 | `fingerprinting` | Look for canvas/WebGL/audio API probing (EFF *Cover Your Tracks* methodology). | `yes` if observed |
@@ -62,18 +62,32 @@ Evaluated in this order — the first matching rule wins:
 1. **Own site** → `A`. (You control it.)
 2. **Disqualifier confirmed** (`adTrackingCookies`, `fingerprinting`,
    `sessionReplay`, or `sellsSharesData` = `yes`) → capped at `D`.
-3. **…and a governance failure** (`honorsGPC` = `no`, or `adsTrackers` = `high`)
-   → escalates to `F`.
+3. **…and a governance failure** → escalates to `F`. A governance failure is
+   `adsTrackers` = `high`, **or** `honorsGPC` = `no` *when GPC is applicable* —
+   i.e. the site sells/shares or ad-tracks (`adTrackingCookies` = `yes` or
+   `adsTrackers` = `low`/`high`).
 4. **Governance failure alone** (no disqualifier) → `C`.
-5. **No confirmed-bad signals** → must be *earned*:
-   - Requires `honorsGPC` = `yes` **and** `adTrackingCookies` = `no`. Otherwise
-     → `Unclassified`.
-   - Any remaining `unknown` among the other signals → `C`.
-   - Fully verified clean, no ads/scripts → `A`; minor ads/scripts → `B`.
+5. **No confirmed-bad signals** → earned from positive evidence:
+   - `adTrackingCookies` = `no` **and** at most minor third-party content
+     (`adsTrackers` `none`/`low` and `thirdPartyScripts` not `high`) → `B`
+     **even when `honorsGPC` is Unknown**.
+   - The same site that *also* honours GPC and is fully verified clean
+     (`adsTrackers` `none`, `thirdPartyScripts` `none`, and `fingerprinting`,
+     `sessionReplay`, `sellsSharesData` all `no`) → `A`.
+   - Otherwise, if any behavioural signal is verified but the site isn't
+     confirmed clean → `C`; if essentially nothing is verified → `Unclassified`.
 
-This is why you cannot game a good grade by leaving bad signals blank — blanks
-can't lift you past `C`, and a confirmed disqualifier caps you no matter how
-clean everything else is.
+**On `honorsGPC`.** It is a *booster*, not a gate. Honouring GPC lifts a
+confirmed-clean site to `A`; leaving it Unknown does **not** strand a clean site
+at `?`. And GPC honouring only matters for a site that has something to opt out
+of — for a site that neither sells/shares nor ad-tracks, `honorsGPC` = `no` is
+inert (it never caps the grade, and never scores better than Unknown).
+
+Two invariants the code guarantees: an `unknown` signal never *raises* a grade,
+and recording `honorsGPC` = `no` never yields a *better* grade than leaving it
+Unknown. You cannot game a good grade by leaving bad signals blank — a confirmed
+disqualifier caps you no matter how clean everything else looks, and `A` requires
+full positive confirmation **plus** GPC.
 
 ## Adding an entry
 
@@ -111,12 +125,21 @@ Rules enforced by `New()` (and therefore by `go test`):
 
 ## Worked example — youtube.com → F
 
-- `adTrackingCookies: yes` → disqualifier → cap at D.
-- `honorsGPC: no` → governance failure → escalate to **F**.
-- Reasons surfaced: *Sets ad/tracking cookies*, *Does not honour Global Privacy
-  Control*, *Heavy third-party ads/trackers*, *Sells or shares personal data*.
+- `adTrackingCookies: yes` (third-party) → disqualifier → cap at D.
+- The site ad-tracks and sells/shares, so GPC is applicable; `honorsGPC: no`
+  (plus `adsTrackers: high`) is a governance failure → escalate to **F**.
+- Reasons surfaced: *Sets third-party ad/tracking cookies*, *Sells or shares
+  personal data*, *Heavy third-party ads/trackers*, *Sells/shares or ad-tracks
+  without honouring Global Privacy Control*.
 
 Compare `youtube-nocookie.com`: cookies-on-playback are left `unknown` (not
-asserted clean), but `honorsGPC: no` caps it at **C**. The real privacy win of
-the `-nocookie` domain is *deferral*, which belongs to your page's click-to-load
-facade, not to the destination's own grade — the rubric stays honest about that.
+asserted clean), so there is no disqualifier — but it still ad-tracks
+(`adsTrackers: low`), which makes GPC applicable, and `honorsGPC: no` is then a
+governance failure that caps it at **C**. The real privacy win of the `-nocookie`
+domain is *deferral*, which belongs to your page's click-to-load facade, not to
+the destination's own grade — the rubric stays honest about that.
+
+Contrast a clean reference site (e.g. `signal.org`): no third-party ad cookies,
+no ads/trackers, doesn't sell/share, `honorsGPC` unverified. It now grades **B**
+"Considerate" rather than `?` — a confirmed-clean site is no longer penalised for
+unverified GPC. Confirm GPC honouring to lift it to **A**.

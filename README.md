@@ -39,11 +39,11 @@ fmt.Println(r.Reasons) // why it got that grade
 
 | Grade | Name | Meaning |
 |-------|------|---------|
-| A | Clean | Verified clean; honours GPC; no ad cookies, ads, trackers, or third-party scripts |
-| B | Considerate | Verified clean on the disqualifiers; honours GPC; minor third-party content |
-| C | Mixed | GPC not honoured, or some signals unverified |
-| D | Tracking | A confirmed disqualifier (ad cookies / fingerprinting / session replay / data selling) |
-| F | Invasive | A disqualifier plus a governance failure (no GPC, or heavy trackers) |
+| A | Clean | Fully verified clean (no third-party ad cookies, ads, trackers, or scripts) **and** honours GPC |
+| B | Considerate | Confirmed no third-party ad cookies and only minor third-party content — reached even when GPC is unverified |
+| C | Mixed | Some signals verified but not confirmed clean, or an in-scope site that doesn't honour GPC |
+| D | Tracking | A confirmed disqualifier (third-party ad cookies / fingerprinting / session replay / data selling) |
+| F | Invasive | A disqualifier plus a governance failure (heavy trackers, or ad-tracking/selling without honouring GPC) |
 | ? | Unclassified | Not enough verified signals to rate honestly |
 
 Plus a provenance marker: `★` own · `✓` audited · `~` imported.
@@ -54,8 +54,12 @@ domain count.
 
 The grade is derived **worst-signal-dominates**: an unverified signal is
 `unknown` and can never raise a grade, and any single confirmed-bad signal caps
-the result. See [`docs/scoring-guide.md`](docs/scoring-guide.md) for how to add
-and honestly rate a site.
+the result. `honorsGPC` is a **booster, not a gate** — honouring GPC lifts a
+confirmed-clean site to `A`, but leaving it unverified never strands a clean site
+at `?`; and GPC only matters for a site that actually sells/shares or ad-tracks.
+`adTrackingCookies` means **third-party / cross-site** cookies only, not benign
+first-party ones. See [`docs/scoring-guide.md`](docs/scoring-guide.md) for how to
+add and honestly rate a site.
 
 ## Design principles
 

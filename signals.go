@@ -97,7 +97,10 @@ func (l Level) MarshalText() ([]byte, error) { return []byte(l.String()), nil }
 // field defaults to its Unknown value so a partially-filled entry is honest
 // about what has not been verified.
 type Signals struct {
-	// AdTrackingCookies: sets advertising/tracking cookies (a grade disqualifier).
+	// AdTrackingCookies: sets THIRD-PARTY / cross-site advertising or tracking
+	// cookies (a grade disqualifier). Benign first-party functional or
+	// privacy-respecting first-party analytics cookies do NOT count — record
+	// those as No (or leave Unknown), not Yes. See docs/scoring-guide.md.
 	AdTrackingCookies Ternary `json:"adTrackingCookies,omitempty"`
 	// HonorsGPC: honours the Global Privacy Control signal.
 	HonorsGPC Ternary `json:"honorsGPC,omitempty"`
