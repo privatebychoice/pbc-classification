@@ -1,5 +1,5 @@
 module go.privatebychoice.com/pbc-classification
 
-go 1.26
+go 1.27
 
-require golang.org/x/net v0.57.0
+require golang.org/x/net v0.62.0
